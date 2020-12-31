@@ -1,12 +1,12 @@
 library(tidyverse)
 library(lubridate)
 library(gganimate)
-# library(tidyselect)
+
 
 m_wide <- readr::read_csv("./comuni_giornaliero_31ottobre.csv", 
                           na = 'n.d.', 
                           # just a chunk for testing
-                          # n_max = 1000,
+                          n_max = 400,
                           locale = locale(encoding = "ISO-8859-1"))
 
 m_wide <- rename_with(m_wide, .fn = tolower)
@@ -55,7 +55,7 @@ conti <- mlong %>%
   arrange(date) %>% 
   mutate(col = case_when(y == 2020 ~ 'firebrick1',
                          y != 2020 ~ 'grey'),
-         col = factor(col))
+         col = factor(col)) 
 
 temp <- conti %>% 
   filter(y != 2020) %>% 
@@ -82,7 +82,7 @@ final <- full_join(by = c("date",
   arrange(date, gen, cl_eta) %>% 
   mutate(frame = row_number())
 
-rm(temp)
+rm(temp, mlong)
 gc()
 
 
@@ -106,15 +106,15 @@ plt <- final %>%
        x = NULL,
        y = NULL)
 
-
+gc(' ')
 animate(plt + transition_reveal(frame),
         res = 1000,
         fps = 24,
-        height = 1200,
-        width = 1200*16/9,
+        height = 12000,
+        width = 12000*16/9,
         duration = 30,
         end_pause = 100,
-        nframes = max(final$frame),
+        nframes = max(final$frame)/2,
         renderer = gifski_renderer(file = './agg_daily.gif',
                                    loop = T)
         )
