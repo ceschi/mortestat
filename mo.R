@@ -6,7 +6,7 @@ library(gganimate)
 m_wide <- readr::read_csv("./comuni_giornaliero_31ottobre.csv", 
                           na = 'n.d.', 
                           # just a chunk for testing
-                          n_max = 400,
+                          # n_max = 100,
                           locale = locale(encoding = "ISO-8859-1"))
 
 m_wide <- rename_with(m_wide, .fn = tolower)
@@ -86,19 +86,25 @@ rm(temp, mlong)
 gc()
 
 
+future::plan("multisession")
 # base for animation
 plt <- final %>% 
   ggplot(aes(x = yd,
              y = tot,
              group = y)) +
-  geom_line(aes(colour = I(col))) + 
-  geom_line(aes(x = yd, y = avg20), colour = 'black') + 
+  geom_line(aes(colour = I(col)),
+            size = 2) + 
+  # scale_alpha(range = c(.2, 1)) +
+  geom_line(aes(x = yd, 
+                y = avg20), 
+            size = 1.5,
+            colour = 'black') + 
   geom_point(size = 3,
              colour = 'black') +
   geom_text(aes(label = y),
             size = 3,
             colour = 'black',
-            nudge_x = 15) +
+            nudge_x = 25) +
   theme_minimal() +
   labs(title = 'Daily total deaths in Italy, 2015:01-2020:10',
        subtitle = 'Grey 2015 to 19; black 2015-19 daily avg; red 2020',
@@ -107,16 +113,21 @@ plt <- final %>%
        y = NULL)
 
 gc(' ')
-animate(plt + transition_reveal(frame),
+
+# rendered
+plt_rend <- plt + transition_reveal(frame)
+
+animate(plt_rend,
         res = 1000,
         fps = 24,
-        height = 12000,
-        width = 12000*16/9,
-        duration = 30,
-        end_pause = 100,
-        nframes = max(final$frame)/2,
-        renderer = gifski_renderer(file = './agg_daily.gif',
-                                   loop = T)
+        height = 6,
+        width = 10,
+        unit = 'in',
+        duration = 60,
+        end_pause = 200,
+        renderer = av_renderer(file = './agg_daily.mp4')
+        # renderer = gifski_renderer(file = './agg_daily.gif',
+        #                            loop = T)
         )
 
 
