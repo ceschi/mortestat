@@ -1,7 +1,7 @@
 library(tidyverse)
 library(lubridate)
 library(gganimate)
-
+library(tictoc)
 
 m_wide <- readr::read_csv("./comuni_giornaliero_31ottobre.csv", 
                           na = 'n.d.', 
@@ -117,19 +117,25 @@ gc(' ')
 # rendered
 plt_rend <- plt + transition_reveal(frame)
 
+tic('Rendering')
+gc()
+plt_anim <- 
 animate(plt_rend,
         res = 1000,
-        fps = 24,
+        fps = 14,
         height = 6,
         width = 10,
         unit = 'in',
-        duration = 60,
-        end_pause = 200,
-        renderer = av_renderer(file = './agg_daily.mp4')
-        # renderer = gifski_renderer(file = './agg_daily.gif',
-        #                            loop = T)
+        duration = 30,
+        end_pause = 100,
+        # renderer = av_renderer()
+        renderer = ffmpeg_renderer()
+        # renderer = gifski_renderer(loop = T)
         )
+toc()
 
+anim_save(filename = 'agg_daily', 
+          animation = plt_anim)
 
 # by age class, gender
 # conti_full <- mlong %>% 
