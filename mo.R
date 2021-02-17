@@ -31,11 +31,6 @@ mlong <- m_wide %>%
                values_to = 'count') %>% 
   # drop zero recordings
   filter(count != 0) %>%
-  # drop artefacts for leap years
-  # filter(!(d == '29' &
-  #          m == '02' & 
-  #          !(year %in% c('16','20')))
-  #        ) %>% 
   mutate(year = as.character(year),
          d = as.character(d),
          m = as.character(m),
@@ -78,8 +73,9 @@ mid <- agg %>%
   filter(y != 2020) %>% 
   group_by(dm) %>% 
   mutate(AVG = mean(tot, na.rm = T),
-         Min = min(tot, na.rm = T),
-         Max = max(tot, na.rm = T)) %>% 
+         # Min = min(tot, na.rm = T),
+         # Max = max(tot, na.rm = T)
+         ) %>% 
   ungroup() %>% 
   select(-y, -tot) %>%
   pivot_longer(c(AVG, Min, Max),
@@ -101,28 +97,18 @@ bottom <- agg %>%
   mutate(y = as.character(y)) %>%  
   arrange(date)
 
-plo2 <- agg %>% 
-  group_by(dm) %>% 
-  mutate(avg = mean(tot[y!=2020], na.rm = T),
-         min = min(tot[y!=2020], na.rm = T),
-         max = max(tot[y!=2020], na.rm = T)) %>% 
-  ungroup() %>% 
-  arrange(date)
 
 plottable <- bind_rows(top, mid, bottom) %>% 
   ungroup() %>% 
-  filter(!(y %in% c('Min', 'Max'))) %>%
+  # filter(!(y %in% c('Min', 'Max'))) %>%
   mutate(lincol = case_when(y %in% as.character(2011:2019) ~ 'grey',
                             y == '2020' ~ 'firebrick1',
-                            # y %in% c('Min', 'Max') ~ 'green'),
                             y == 'AVG' ~ 'black'),
          alpa = case_when(y %in% as.character(2011:2019) ~ 1,
                           y == '2020' ~ 1,
-                          # y %in% c('Min', 'Max') ~ .2,
                           y == 'AVG' ~ 1),
          sizze = case_when(y %in% as.character(2011:2019) ~ .5,
                            y == '2020' ~ 1,
-                           # y %in% c('Min', 'Max') ~ .5,
                            y == 'AVG' ~ 1),
          frame = row_number(),
          plt_date = as.Date(dm, format = '%d-%m'),
@@ -130,8 +116,8 @@ plottable <- bind_rows(top, mid, bottom) %>%
 
 future::plan("multisession")
 
-plt <- plottable %>% 
-  filter(!(y %in% c('Min', 'Max'))) %>% 
+base_plt <- plottable %>% 
+  # filter(!(y %in% c('Min', 'Max'))) %>% 
   ggplot(aes(x = plt_date,
              y = tot,
              group = y)) +
@@ -141,6 +127,15 @@ plt <- plottable %>%
   scale_x_date(breaks = '1 month',
                date_labels = "%b", 
                expand=expansion(add=c(0,-6.5))) +
+  theme_minimal() +
+  labs(title = 'Daily total deaths in Italy, 2011:01-2020:12',
+       subtitle = 'Grey 2011 to 19; black 2011-19 daily avg; red 2020',
+       caption = 'Source: ISTAT',
+       x = NULL,
+       y = NULL)
+
+# layering for animation
+plt <- base_plt+
   geom_point(aes(group = 1),
              size = 2,
              colour = 'black') +
@@ -149,14 +144,8 @@ plt <- plottable %>%
                 group = 1),
             size = 3,
             colour = 'black',
-            nudge_x = 7) +
-  theme_minimal() +
+            nudge_x = 7) 
   # coord_polar() +
-  labs(title = 'Daily total deaths in Italy, 2015:01-2020:10',
-       subtitle = 'Grey 2015 to 19; black 2015-19 daily avg; red 2020',
-       caption = 'Source: ISTAT',
-       x = NULL,
-       y = NULL)
 
 # rendered
 plt_rend <- plt + transition_reveal(frame) #; plt_rend
@@ -196,6 +185,8 @@ anim_save(filename = 'agg_daily.gif',
           animation = plt_anim)
 toc()
 
+  
+
 ##### excess deaths count ######################################################
 
 #import back mlong
@@ -227,7 +218,7 @@ solo20 <- mlong_gen %>%
 byear <- full_join(x = avg, y = solo20, by = c('dm'))
 
 
-## moar data, eurostat
+#### EU data ###################################################################
 
 nuts3 <- read_tsv('https://ec.europa.eu/eurostat/estat-navtree-portlet-prod/BulkDownloadListing?file=data/demo_r_mwk3_t.tsv.gz', na = ':', trim_ws = T)
 nuts2 <- read_tsv('https://ec.europa.eu/eurostat/estat-navtree-portlet-prod/BulkDownloadListing?file=data/demo_r_mwk2_ts.tsv.gz', na = ':', trim_ws = T)
@@ -256,6 +247,19 @@ n3_clean <- nuts3 %>% mutate(geo = str_remove(`unit,geo\\time`, 'NR,'),
                          year != 2020 ~ .5),
          sizze = case_when(year == 2020 ~ 1,
                            year != 2020 ~ .5))
+
+geo_short <- unique(n3_clean$geo)
+geo_long <- c('Albania', 'Austria', 'Belgium', 'Bulgaria', 'Switzerland',
+              'Cyprus', 'Czechia', 'Germany', 'Denmark', 'Estonia',
+              'Greece', 'Spain', 'Finland', 'France', 'Croatia',
+              'Hungary', 'Iceland', 'Italy', 'Lichtenstein', 'Lituania',
+              'Luxembourg', 'Latvia', 'Montenegro', 'Malta', 'Netherlands',
+              'Norway', 'Poland', 'Portugal', 'Romania', 'Serbia', 'Sweden',
+              'Slovenia', 'Slovakia', 'UK')
+
+n3_clean$geo <- n3_clean$geo %>% 
+  plyr::mapvalues(from = geo_short,
+                  to = geo_long)
 
 
 plt_n3 <- n3_clean %>% 
