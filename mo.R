@@ -4,7 +4,7 @@ library(lubridate)
 library(gganimate)
 library(tictoc)
 
-m_wide <- readr::read_csv("./comuni_giornaliero_30novembre.csv", 
+m_wide <- readr::read_csv("./comuni_giornaliero_31dicembre.csv", 
                           na = 'n.d.', 
                           # just a chunk for testing
                           # n_max = 100,
@@ -73,8 +73,8 @@ mid <- agg %>%
   filter(y != 2020) %>% 
   group_by(dm) %>% 
   mutate(AVG = mean(tot, na.rm = T),
-         # Min = min(tot, na.rm = T),
-         # Max = max(tot, na.rm = T)
+         Min = min(tot, na.rm = T),
+         Max = max(tot, na.rm = T)
          ) %>% 
   ungroup() %>% 
   select(-y, -tot) %>%
@@ -139,13 +139,13 @@ plt <- base_plt+
   geom_point(aes(group = 1),
              size = 2,
              colour = 'black') +
+  # coord_polar() +
   geom_text(aes(y = ma14,
                 label = y,
                 group = 1),
             size = 3,
             colour = 'black',
             nudge_x = 7) 
-  # coord_polar() +
 
 # rendered
 plt_rend <- plt + transition_reveal(frame) #; plt_rend
@@ -178,7 +178,7 @@ plt_anim <- animate(plt_rend,
                     # renderer = av_renderer(),
                     # renderer = ffmpeg_renderer(),
                     # renderer = gifski_renderer(loop = T),
-                    end_pause = 100
+                    end_pause = 200
                     )
 
 anim_save(filename = 'agg_daily.gif', 
