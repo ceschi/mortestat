@@ -103,13 +103,19 @@ plottable <- bind_rows(top, mid, bottom) %>%
   # filter(!(y %in% c('Min', 'Max'))) %>%
   mutate(lincol = case_when(y %in% as.character(2011:2019) ~ 'grey',
                             y == '2020' ~ 'firebrick1',
-                            y == 'AVG' ~ 'black'),
+                            y == 'AVG' ~ 'black',
+                            y == 'Min' ~ 'navyblue',
+                            y == 'Max' ~ 'navyblue'),
          alpa = case_when(y %in% as.character(2011:2019) ~ 1,
                           y == '2020' ~ 1,
-                          y == 'AVG' ~ 1),
+                          y == 'AVG' ~ 1,
+                          y == 'Min' ~ .5,
+                          y == 'Max' ~ .5),
          sizze = case_when(y %in% as.character(2011:2019) ~ .5,
                            y == '2020' ~ 1,
-                           y == 'AVG' ~ 1),
+                           y == 'AVG' ~ 1,
+                           y == 'Min' ~ 1,
+                           y == 'Max' ~ 1),
          frame = row_number(),
          plt_date = as.Date(dm, format = '%d-%m'),
          ma14 = data.table::frollmean(tot, 14))
@@ -117,7 +123,7 @@ plottable <- bind_rows(top, mid, bottom) %>%
 future::plan("multisession")
 
 base_plt <- plottable %>% 
-  # filter(!(y %in% c('Min', 'Max'))) %>% 
+  # filter(!(y %in% c('Min', 'Max'))) %>%
   ggplot(aes(x = plt_date,
              y = tot,
              group = y)) +
@@ -168,21 +174,23 @@ tic('Rendering')
 
 plt_anim <- animate(plt_rend,
                     res = 250,
-                    fps = 30,
+                    fps = 24,
                     nframes = max(plottable$frame),
-                    height = 5,
-                    width = 9,
+                    height = 4,
+                    width = 7,
                     unit = 'in',
-                    duration = 30,
+                    duration = 40,
                     # which is faster?
                     # renderer = av_renderer(),
-                    # renderer = ffmpeg_renderer(),
+                    renderer = ffmpeg_renderer(),
                     # renderer = gifski_renderer(loop = T),
                     end_pause = 200
                     )
 
-anim_save(filename = 'agg_daily.gif', 
-          animation = plt_anim)
+anim_save(
+  # filename = 'agg_daily.gif', 
+  filename = 'agg_daily.webm',
+  animation = plt_anim)
 toc()
 
   
